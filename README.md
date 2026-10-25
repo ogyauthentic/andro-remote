@@ -1,25 +1,39 @@
 # Android project initial setup
 
-This project is a modern Android Kotlin app built with Jetpack Compose for a TCP client connection.
+Project ini adalah aplikasi Android modern berbasis Kotlin dan Jetpack Compose untuk mengirim data ke server TCP.
 
-## Features
-- connect to a TCP server
-- input server IP and port
-- send a message to the server
-- display the server response
+## Fitur
+- koneksi ke server TCP
+- input IP server dan port
+- kirim pesan ke server
+- menampilkan balasan server
 
-## How to run
-1. Open the project in Android Studio.
-2. Let Gradle sync complete.
-3. Connect a device or start an emulator.
-4. Run the app.
+## Struktur project
+- `app/` : project Android
+- `server.py` : server pendukung untuk testing
+- `README.md` : panduan project
 
-## Default server
-- Emulator: use `10.0.2.2`
-- Real device: use your laptop/PC IP on the same network
-- Port: `9999`
+## Cara menjalankan aplikasi Android
+1. Buka project di Android Studio.
+2. Tunggu Gradle sync selesai.
+3. Hubungkan device atau jalankan emulator.
+4. Jalankan aplikasi.
 
-## Test server example
+## Default konfigurasi server
+- Emulator Android Studio: `10.0.2.2`
+- Device nyata: gunakan IP komputer yang menjalankan server di jaringan yang sama
+- Port default: `9999`
+
+## Cara menjalankan server
+Jalankan perintah ini di terminal:
+
+```bash
+python server.py
+```
+
+Server akan berjalan di port `9999`.
+
+## Contoh server test
 ```python
 import socket
 
@@ -45,3 +59,8 @@ while True:
 
     conn.close()
 ```
+
+## Catatan
+- Android membutuhkan izin `INTERNET` untuk socket TCP.
+- Untuk emulator, gunakan `10.0.2.2` sebagai IP server.
+- Untuk device fisik, gunakan IP laptop/komputer pada jaringan yang sama.
