@@ -1,110 +1,101 @@
 # Remote Control Project
 
-Project ini adalah versi remote control yang lebih lengkap untuk client Android dan server TCP.
+Project ini adalah versi final remote control untuk Android client dan server TCP yang dapat di-deploy ke VPS/public server.
 
-## Fitur utama
+## Fitur akhir
 - autentikasi token
-- koneksi TCP antara Android client dan server
-- perintah remote control seperti:
-  - `INFO`
+- koneksi TCP antar client dan server
+- command queue pada client side
+- real battery check
+- real GPS check (last known location)
+- file manager sederhana untuk list file di storage umum
+- command set lengkap:
   - `PING`
+  - `INFO`
   - `TOAST|text`
-  - `URL|https://example.com`
+  - `URL|https://...`
   - `VIBRATE`
   - `BATTERY`
   - `GPS`
+  - `LIST_FILES`
   - `REBOOT`
   - `FLASH_ON`
   - `FLASH_OFF`
   - `SCREEN_ON`
   - `SCREEN_OFF`
   - `GET_STATUS`
+  - `QUEUE:cmd1|cmd2|cmd3`
 
 ## Struktur project
-- `server.py` : server Python untuk menangani koneksi dan perintah
-- `app/` : project Android Kotlin/Jetpack Compose
-- `README.md` : dokumentasi project
+- `server.py` : server Python untuk protokol remote control
+- `app/` : project Android Kotlin + Jetpack Compose
+- `README.md` : dokumentasi utama
 
 ## Konfigurasi default
 - Host: `0.0.0.0`
 - Port: `9999`
 - Token: `mysecret123`
 
-## Cara menjalankan server
-Pada VPS atau komputer server, jalankan:
-
+## Jalankan server (VPS)
 ```bash
 python3 server.py
 ```
 
-## Cara menjalankan Android app
+## Jalankan Android app
 1. Buka folder `app` di Android Studio.
 2. Tunggu Gradle sync selesai.
-3. Ubah konfigurasi server di file `MainActivity.kt` jika perlu.
-4. Jalankan ke emulator atau device Android.
+3. Pastikan perangkat punya izin internet, lokasi, dan storage.
+4. Jalankan aplikasi.
 
-Setelan default Android:
+## Pengaturan default Android
 ```kotlin
 private val serverIp = "203.0.113.10"
 private val serverPort = 9999
 private val token = "mysecret123"
 ```
 
-Ganti angka tersebut sesuai IP server public/VPS Anda.
+Ganti ke IP public server / VPS Anda.
 
-## Protokol komunikasi
+## Protokol
 Client mengirim:
 ```text
 AUTH:mysecret123
-CMD:INFO
-CMD:TOAST|Halo dari server
-CMD:URL|https://google.com
 CMD:BATTERY
+CMD:GPS
+CMD:LIST_FILES
+CMD:QUEUE:BATTERY|GPS|LIST_FILES
 ```
 
 Server membalas:
 ```text
 AUTH_OK
-DEVICE_INFO:AndroidRemoteClient|SDK=34|Model=Demo
-ACK:TOAST|Halo dari server
-BATTERY:85
-GPS:lat=-6.200000|lng=106.816666
+EXEC:BATTERY
+EXEC:GPS
+EXEC:LIST_FILES
+ACK:QUEUE|3
 ```
 
-## Command list
-| Command | Arti |
-|--------|------|
-| `PING` | cek koneksi |
-| `INFO` | ambil info perangkat |
-| `TOAST|text` | tampilkan toast di Android |
-| `URL|https://...` | buka URL di browser |
-| `VIBRATE` | getar telepon |
-| `BATTERY` | cek status baterai |
-| `GPS` | kirim lokasi GPS contoh |
-| `REBOOT` | perintah reboot |
-| `FLASH_ON` | nyalakan flash / lampu |
-| `FLASH_OFF` | matikan flash |
-| `SCREEN_ON` | hidupkan layar |
-| `SCREEN_OFF` | matikan layar |
-| `GET_STATUS` | cek status sistem |
+Client kemudian mengirim hasil balik:
+```text
+RESULT:BATTERY:85
+RESULT:GPS:lat=-6.200000|lng=106.816666
+RESULT:FILES:DCIM;Download;Pictures
+```
+
+## Command queue
+Fitur command queue ada di sisi Android client. Ketika ada beberapa perintah yang masuk berurutan, aplikasi akan menampungnya di `ConcurrentLinkedQueue` lalu memproses satu per satu secara berurutan.
+
+## Fitur real yang sudah ditambahkan
+- Battery: membaca kapasitas baterai via `BatteryManager`
+- GPS: membaca `lastKnownLocation` dari GPS atau network provider
+- File manager: list file dari storage umum `/sdcard`
+- Command queue: memproses perintah satu per satu
 
 ## Catatan keamanan
 - Token default hanya untuk demo.
-- Untuk production, gunakan token yang unik dan aman.
-- Pastikan port server dibuka dengan benar di firewall/VPS.
-- Untuk jaringan beda jaringan, gunakan VPS public, port forwarding, atau ngrok.
+- Untuk production, ganti token menjadi unik.
+- Buka port 9999 di firewall / VPS.
+- Untuk jaringan berbeda, gunakan VPS public, port forwarding, atau ngrok.
 
-## Contoh koneksi beda jaringan
-Server di VPS/public:
-```kotlin
-serverIp = "203.0.113.10"
-serverPort = 9999
-```
-
-Jika server di belakang NAT:
-- gunakan port forwarding di router, atau
-- gunakan ngrok tcp 9999
-
-## Lisensi
-Project ini dibuat untuk kebutuhan demo dan pembelajaran remote-control client/server.
-Penggunaan untuk tujuan ilegal atau merugikan pihak lain dilarang.
+## Catatan penggunaan illegal
+Project ini dibuat untuk tujuan pembelajaran, eksperimen, dan demo. Penggunaan untuk aktivitas ilegal atau merugikan orang lain sangat dilarang.

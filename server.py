@@ -4,6 +4,7 @@ import threading
 HOST = "0.0.0.0"
 PORT = 9999
 TOKEN = "mysecret123"
+command_queue = []
 
 
 def send_response(conn, message):
@@ -13,41 +14,53 @@ def send_response(conn, message):
         print(f"[ERROR] send_response: {exc}")
 
 
+def queue_command(command):
+    command_queue.append(command)
+
+
 def handle_command(conn, command):
-    command = command.strip()
-    if not command:
+    cmd = command.strip()
+    if not cmd:
         return
 
-    print(f"[INFO] Command received: {command}")
+    print(f"[INFO] Command received: {cmd}")
 
-    if command == "PING":
+    if cmd == "PING":
         send_response(conn, "PONG")
-    elif command == "INFO":
-        send_response(conn, "DEVICE_INFO:AndroidRemoteClient|SDK=34|Model=Demo")
-    elif command.startswith("TOAST|"):
-        text = command.split("|", 1)[1]
-        send_response(conn, f"ACK:TOAST|{text}")
-    elif command.startswith("URL|"):
-        url = command.split("|", 1)[1]
-        send_response(conn, f"ACK:URL|{url}")
-    elif command == "VIBRATE":
-        send_response(conn, "ACK:VIBRATE")
-    elif command == "BATTERY":
-        send_response(conn, "BATTERY:85")
-    elif command == "GPS":
-        send_response(conn, "GPS:lat=-6.200000|lng=106.816666")
-    elif command == "REBOOT":
-        send_response(conn, "ACK:REBOOT")
-    elif command == "FLASH_ON":
-        send_response(conn, "ACK:FLASH_ON")
-    elif command == "FLASH_OFF":
-        send_response(conn, "ACK:FLASH_OFF")
-    elif command == "SCREEN_ON":
-        send_response(conn, "ACK:SCREEN_ON")
-    elif command == "SCREEN_OFF":
-        send_response(conn, "ACK:SCREEN_OFF")
-    elif command == "GET_STATUS":
-        send_response(conn, "STATUS:ONLINE|TOKEN_OK|READY")
+    elif cmd == "INFO":
+        send_response(conn, "EXEC:INFO")
+    elif cmd.startswith("TOAST|"):
+        text = cmd.split("|", 1)[1]
+        send_response(conn, f"EXEC:TOAST|{text}")
+    elif cmd.startswith("URL|"):
+        url = cmd.split("|", 1)[1]
+        send_response(conn, f"EXEC:URL|{url}")
+    elif cmd == "VIBRATE":
+        send_response(conn, "EXEC:VIBRATE")
+    elif cmd == "BATTERY":
+        send_response(conn, "EXEC:BATTERY")
+    elif cmd == "GPS":
+        send_response(conn, "EXEC:GPS")
+    elif cmd == "LIST_FILES":
+        send_response(conn, "EXEC:LIST_FILES")
+    elif cmd == "REBOOT":
+        send_response(conn, "EXEC:REBOOT")
+    elif cmd == "FLASH_ON":
+        send_response(conn, "EXEC:FLASH_ON")
+    elif cmd == "FLASH_OFF":
+        send_response(conn, "EXEC:FLASH_OFF")
+    elif cmd == "SCREEN_ON":
+        send_response(conn, "EXEC:SCREEN_ON")
+    elif cmd == "SCREEN_OFF":
+        send_response(conn, "EXEC:SCREEN_OFF")
+    elif cmd == "GET_STATUS":
+        send_response(conn, "EXEC:GET_STATUS")
+    elif cmd.startswith("QUEUE:"):
+        items = cmd.split(":", 1)[1].split("|")
+        for item in items:
+            if item:
+                queue_command(item)
+        send_response(conn, f"ACK:QUEUE|{len(items)}")
     else:
         send_response(conn, "ERR:UNKNOWN_COMMAND")
 
@@ -77,17 +90,19 @@ def handle_client(conn, addr):
             if not data:
                 break
 
-            message = data.decode("utf-8", errors="ignore").strip()
-            if not message:
+            msg = data.decode("utf-8", errors="ignore").strip()
+            if not msg:
                 continue
 
-            if message.startswith("CMD:"):
-                command = message.split(":", 1)[1].strip()
+            if msg.startswith("RESULT:"):
+                print(f"[RESULT] {addr}: {msg}")
+                continue
+
+            if msg.startswith("CMD:"):
+                command = msg.split(":", 1)[1].strip()
                 handle_command(conn, command)
-            elif message == "PING":
-                send_response(conn, "PONG")
             else:
-                handle_command(conn, message)
+                handle_command(conn, msg)
 
     except Exception as exc:
         print(f"[ERROR] Client {addr} error: {exc}")
